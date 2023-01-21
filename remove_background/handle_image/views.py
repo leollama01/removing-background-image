@@ -1,7 +1,7 @@
 import mimetypes
 import os
 import shutil
-from datetime import datetime
+from datetime import datetime, timezone
 
 import magic
 from django.core.files.storage import FileSystemStorage
@@ -18,44 +18,54 @@ from .models import ImageUploaded, LogError
 def render_index(request):
     my_context = {}
 
-    currentDate = datetime.now()
+    current_date = datetime.now(timezone.utc)
     description = ''
 
     target_folder = os.getcwd() + '/media'
 
-    # Reference: https://stackoverflow.com/a/185941/21053661
     try:
-        for filename in os.listdir(target_folder):
-            _file_path = os.path.join(target_folder, filename)
+        last_image = ImageUploaded.objects.last()
+        date_last_image = last_image.date
+        diff_time = current_date - date_last_image
+        diff_minutes = diff_time.total_seconds() / 60
 
-            try:
-                if os.path.isfile(_file_path) or os.path.islink(_file_path):
-                    os.unlink(_file_path)
+    except Exception:
+        diff_minutes = None
 
-                elif os.path.isdir(_file_path):
-                    shutil.rmtree(_file_path)
-
-            except Exception as e:
-                description = 'Failed to delete %s. Reason: %s' % (
-                    _file_path, e)
+    # Reference: https://stackoverflow.com/a/185941/21053661
+    if diff_minutes is not None and diff_minutes > 30:
+        try:
+            for filename in os.listdir(target_folder):
+                _file_path = os.path.join(target_folder, filename)
 
                 try:
-                    insertLog = LogError(
-                        date=currentDate, description=description)
-                    insertLog.save()
+                    if os.path.isfile(_file_path) or os.path.islink(_file_path):
+                        os.unlink(_file_path)
+
+                    elif os.path.isdir(_file_path):
+                        shutil.rmtree(_file_path)
 
                 except Exception as e:
-                    print(str(e))
+                    description = 'Failed to delete %s. Reason: %s' % (
+                        _file_path, e)
 
-    except Exception as e:
-        description = str(e)
-        try:
-            insertLog = LogError(
-                date=currentDate, description=description)
-            insertLog.save()
+                    try:
+                        insertLog = LogError(
+                            date=current_date, description=description)
+                        insertLog.save()
+
+                    except Exception:
+                        pass
 
         except Exception as e:
-            print(str(e))
+            description = str(e)
+            try:
+                insertLog = LogError(
+                    date=current_date, description=description)
+                insertLog.save()
+
+            except Exception:
+                pass
 
     if request.method == 'POST':
         try:
@@ -81,7 +91,7 @@ def render_index(request):
                     if rm_bg is not False:
                         try:
                             insertImageUploaded = ImageUploaded(
-                                date=currentDate
+                                date=current_date
                             )
                             insertImageUploaded.save()
 
@@ -90,12 +100,12 @@ def render_index(request):
                                 description = str(e) + '- except in ' \
                                     'render_index function, rm_bg is not False'
                                 insertLog = LogError(
-                                    date=currentDate, description=description
+                                    date=current_date, description=description
                                 )
                                 insertLog.save()
 
-                            except Exception as e:
-                                print(str(e), '- except upload file')
+                            except Exception:
+                                pass
 
                         my_context['image'] = rm_bg
                         return render(
@@ -127,12 +137,13 @@ def render_index(request):
 
         except Exception as e:
             try:
-                description = str(e) + '- except in render_index function'
-                insertLog = LogError(date=currentDate, description=description)
+                description = str(e) + ' - except in render_index function'
+                insertLog = LogError(
+                    date=current_date, description=description)
                 insertLog.save()
 
-            except Exception as e:
-                print(str(e), '- except upload file')
+            except Exception:
+                pass
 
             my_context['warning'] = 'Oh no! Something wrong ' \
                 'happened. Please, try again.'
@@ -166,16 +177,17 @@ def remove_background_image(request, image_path):
             _return = name_old_file + '_no-bg.png'
 
         except Exception as e:
-            currentDate = datetime.now()
+            current_date = datetime.now()
             description = str(e) + \
                 ' - exception in function \'remove_background_image\''
 
             try:
-                insertLog = LogError(date=currentDate, description=description)
+                insertLog = LogError(
+                    date=current_date, description=description)
                 insertLog.save()
 
-            except Exception as e:
-                print(str(e), 'trying saving log error description')
+            except Exception:
+                pass
 
     return _return
 
