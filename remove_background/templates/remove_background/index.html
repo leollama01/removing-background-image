@@ -22,7 +22,7 @@
         <main role="main" class="d-flex justify-content-center">
             <div class=".my-maxw-50">
                 {% if image %}
-                
+
                 {% else %}
                     <form action="" method="POST" enctype="multipart/form-data">
                         {% csrf_token %}
@@ -32,6 +32,9 @@
                             <input type="submit" value="Confirm" class="btn btn-secondary text-uppercase ms-1">
                         </div>
                     </form>
+                    {% if warning %}
+                        <span class="bg-secondary rounded p-2">{{ warning }}</span>
+                    {% endif %}
                 {% endif %}
             </div>
         </main>

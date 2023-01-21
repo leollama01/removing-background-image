@@ -1,15 +1,46 @@
+import os
+import shutil
+from datetime import datetime
+
 import magic
 from django.core.files.storage import FileSystemStorage
 from django.shortcuts import render
+from PIL import Image
+from rembg import remove
+
+from .models import ImageUploaded, LogError
 
 # Create your views here.
 
 
 def render_index(request):
-    my_context = {
-        'return': 0,
-        'message': ''
-    }
+    my_context = {}
+
+    currentDate = datetime.now()
+    description = ''
+
+    target_folder = os.getcwd() + '/media'
+
+    # Reference: https://stackoverflow.com/a/185941/21053661
+    for filename in os.listdir(target_folder):
+        _file_path = os.path.join(target_folder, filename)
+
+        try:
+            if os.path.isfile(_file_path) or os.path.islink(_file_path):
+                os.unlink(_file_path)
+
+            elif os.path.isdir(_file_path):
+                shutil.rmtree(_file_path)
+
+        except Exception as e:
+            description = 'Failed to delete %s. Reason: %s' % (_file_path, e)
+
+            try:
+                insertLog = LogError(date=currentDate, description=description)
+                insertLog.save()
+
+            except Exception as e:
+                print(str(e))
 
     if request.method == 'POST':
         if request.FILES['_upload']:
@@ -28,31 +59,72 @@ def render_index(request):
                 file_to_save = file_system_storage.save(_upload.name, _upload)
                 file_path = file_system_storage.url(file_to_save)
 
-                remove_background_image(request, file_path)
+                rm_bg = remove_background_image(request, file_path)
+
+                if rm_bg is not False:
+                    print(rm_bg, '--- rm_bg')
+                    return render(
+                        request, 'remove_background/index.html',
+                        context=my_context
+                    )
+
+                else:
+                    my_context['warning'] = 'Oh no! Something wrong ' \
+                        'happened. Please, try again.'
+                    return render(
+                        request, 'remove_background/index.html',
+                        context=my_context
+                    )
 
             else:
-                print('invalid file')
-
-            try:
-                # print(_upload)
-                # print(magic.from_buffer(_upload.read(2048)))
-                print(type(magic.from_buffer(_upload.read(2048))))
-
-            except Exception as e:
-                print(str(e))
+                my_context['warning'] = 'Invalid/incorrect file. Try again.'
+                return render(
+                    request, 'remove_background/index.html', context=my_context
+                )
 
         else:
-            print('no file uploaded')
-
-        # remove_background_image(request, '')
-        return render(request, 'remove_background/index.html', my_context)
+            my_context['warning'] = 'No files uploaded. Try again.'
+            return render(
+                request, 'remove_background/index.html', context=my_context
+            )
 
     else:
         return render(request, 'remove_background/index.html')
 
 
 def remove_background_image(request, image_path):
-    print('remove bg')
+    _return = False
+
+    if request.method == 'POST':
+        try:
+            current_dir = os.getcwd()
+            full_path = str(current_dir) + str(image_path)
+            name_old_file = image_path.split('/')[-1]
+            extension_file = '.' + name_old_file.split('.')[-1]
+            output_path = full_path.replace(name_old_file, '')
+
+            name_old_file = name_old_file.replace(extension_file, '')
+            final_output = output_path + name_old_file + '_no-bg.png'
+
+            input_image = Image.open(full_path)
+            output = remove(input_image)
+            output.save(final_output)
+
+            _return = name_old_file + '_no-bg.png'
+
+        except Exception as e:
+            currentDate = datetime.now()
+            description = str(e) + \
+                ' - exception in function \'remove_background_image\''
+
+            try:
+                insertLog = LogError(date=currentDate, description=description)
+                insertLog.save()
+
+            except Exception as e:
+                print(str(e), 'trying saving log error description')
+
+    return _return
 
 
 # def get_ip_address(request):
