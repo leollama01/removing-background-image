@@ -1,9 +1,11 @@
+import mimetypes
 import os
 import shutil
 from datetime import datetime
 
 import magic
 from django.core.files.storage import FileSystemStorage
+from django.http import HttpResponse
 from django.shortcuts import render
 from PIL import Image
 from rembg import remove
@@ -43,49 +45,87 @@ def render_index(request):
                 print(str(e))
 
     if request.method == 'POST':
-        if request.FILES['_upload']:
-            _upload = request.FILES['_upload']
-            can_save = False
-            valid_extensions = ['jpg', 'jpeg', 'png']
-            magic_file = magic.from_buffer(_upload.read(2048))
+        try:
+            if request.FILES['_upload']:
+                _upload = request.FILES['_upload']
+                can_save = False
+                valid_extensions = ['jpg', 'jpeg', 'png']
+                magic_file = magic.from_buffer(_upload.read(2048))
 
-            for extensions in valid_extensions:
-                if extensions.upper() in magic_file.upper():
-                    can_save = True
-                    break
+                for extensions in valid_extensions:
+                    if extensions.upper() in magic_file.upper():
+                        can_save = True
+                        break
 
-            if can_save:
-                file_system_storage = FileSystemStorage()
-                file_to_save = file_system_storage.save(_upload.name, _upload)
-                file_path = file_system_storage.url(file_to_save)
+                if can_save:
+                    file_system_storage = FileSystemStorage()
+                    file_to_save = file_system_storage.save(
+                        _upload.name, _upload)
+                    file_path = file_system_storage.url(file_to_save)
 
-                rm_bg = remove_background_image(request, file_path)
+                    rm_bg = remove_background_image(request, file_path)
 
-                if rm_bg is not False:
-                    print(rm_bg, '--- rm_bg')
-                    return render(
-                        request, 'remove_background/index.html',
-                        context=my_context
-                    )
+                    if rm_bg is not False:
+                        try:
+                            insertImageUploaded = ImageUploaded(
+                                date=currentDate
+                            )
+                            insertImageUploaded.save()
+
+                        except Exception as e:
+                            try:
+                                description = str(e) + '- except in ' \
+                                    'render_index function, rm_bg is not False'
+                                insertLog = LogError(
+                                    date=currentDate, description=description
+                                )
+                                insertLog.save()
+
+                            except Exception as e:
+                                print(str(e), '- except upload file')
+
+                        my_context['image'] = rm_bg
+                        return render(
+                            request, 'remove_background/index.html',
+                            context=my_context
+                        )
+
+                    else:
+                        my_context['warning'] = 'Oh no! Something wrong ' \
+                            'happened. Please, try again.'
+                        return render(
+                            request, 'remove_background/index.html',
+                            context=my_context
+                        )
 
                 else:
-                    my_context['warning'] = 'Oh no! Something wrong ' \
-                        'happened. Please, try again.'
+                    my_context['warning'] = 'Invalid/incorrect file. ' \
+                        'Try again.'
                     return render(
                         request, 'remove_background/index.html',
                         context=my_context
                     )
 
             else:
-                my_context['warning'] = 'Invalid/incorrect file. Try again.'
+                my_context['warning'] = 'No files uploaded. Try again.'
                 return render(
                     request, 'remove_background/index.html', context=my_context
                 )
 
-        else:
-            my_context['warning'] = 'No files uploaded. Try again.'
+        except Exception as e:
+            try:
+                description = str(e) + '- except in render_index function'
+                insertLog = LogError(date=currentDate, description=description)
+                insertLog.save()
+
+            except Exception as e:
+                print(str(e), '- except upload file')
+
+            my_context['warning'] = 'Oh no! Something wrong ' \
+                'happened. Please, try again.'
             return render(
-                request, 'remove_background/index.html', context=my_context
+                request, 'remove_background/index.html',
+                context=my_context
             )
 
     else:
@@ -127,6 +167,21 @@ def remove_background_image(request, image_path):
     return _return
 
 
+# Reference: https://djangoadventures.com/how-to-create-file-download-links-in-django/#:~:text=In%20order%20to%20create%20a
+def download_image(request, name_image):
+    path_to_image = os.getcwd()
+    path_to_image += '/media/' + name_image
+
+    file_open = open(path_to_image, 'rb')
+    mime_type, _ = mimetypes.guess_type(path_to_image)
+
+    response = HttpResponse(file_open, content_type=mime_type)
+    response['Content-Disposition'] = "attachment; filename=%s" % name_image
+
+    return response
+
+
+# get ip to limit requests in certain time
 # def get_ip_address(request):
 #     user_ip_address = request.META.get('HTTP_X_FORWARDED_FOR')
 #     if user_ip_address:
