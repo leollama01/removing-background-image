@@ -10,3 +10,4 @@
 ![home_page](https://github.com/leollama01/removing-background-image/blob/main/remove_background/static/images/home_page.png?raw=true)  
 
 ![no_bg_picture](https://github.com/leollama01/removing-background-image/blob/main/remove_background/static/images/no_bg_picture.png?raw=true)  
+

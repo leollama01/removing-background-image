@@ -24,8 +24,8 @@
                 {% if image %}
                     <div class="d-flex flex-column">
                         <img src="{{ MEDIA_URL }}/{{ image }}" alt="Image without background" class="limit-img">
-                        <a href="download/image/{{ image }}" class="btn btn-secondary btn-sm mt-2" target="_blank">Download Image</a>
-                        <a href="/" class="btn btn-secondary btn-sm mt-2 mb-2">Previous</a>
+                        <a href="download/image/{{ image }}" class="btn btn-secondary btn-sm mt-2 text-uppercase" target="_blank">Download Image</a>
+                        <a href="/" class="btn btn-secondary btn-sm mt-2 mb-2 text-uppercase">Previous</a>
                     </div>
                 {% else %}
                     <form action="" method="POST" enctype="multipart/form-data">
@@ -46,7 +46,7 @@
         <footer class="mt-auto">
             <div>
                 <p class="d-flex justify-content-center align-items-center">
-                    My GitHub <a href="https://github.com/leollama01" id="my-github" class="text-decoration-none text-secondary ms-1 me-1">leollama01</a> 
+                    My GitHub <a href="https://github.com/leollama01" id="my-github" class="text-decoration-none text-secondary ms-1 me-1" target="_blank">leollama01</a> 
                     <img src="{% static '/icons/github-icon.svg' %}" alt="A white github icon logo">
                 </p>
             </div>
