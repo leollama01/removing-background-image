@@ -1,0 +1,6 @@
+/venv
+*.sqlite
+*.sqlite3
+*.pyc
+__pycache__/
+.mypy_cache/
