@@ -48,8 +48,7 @@ def render_index(request):
                     print(str(e))
 
     except Exception as e:
-        description = 'Failed to delete %s. Reason: %s' % (
-            _file_path, e)
+        description = str(e)
         try:
             insertLog = LogError(
                 date=currentDate, description=description)
