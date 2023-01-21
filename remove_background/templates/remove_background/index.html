@@ -24,11 +24,11 @@
                 {% if image %}
                 
                 {% else %}
-                    <form action="" method="POST">
+                    <form action="" method="POST" enctype="multipart/form-data">
                         {% csrf_token %}
                         <h2 class="cover-heading">Upload your image to remove background!</h2>
                         <div class="mb-3 d-flex">
-                            <input id="input-image-file" class="form-control my-minw-25" type="file" name="upload" accept=".jpeg, .jpg, .png">
+                            <input id="input-image-file" class="form-control my-minw-25" type="file" name="_upload" accept=".jpeg, .jpg, .png">
                             <input type="submit" value="Confirm" class="btn btn-secondary text-uppercase ms-1">
                         </div>
                     </form>
@@ -39,7 +39,8 @@
         <footer class="mt-auto">
             <div class="">
                 <p>
-                    My GitHub <a href="https://github.com/leollama01">leollama01</a>
+                    My GitHub <a href="https://github.com/leollama01" id="my-github" class="text-decoration-none text-secondary">leollama01</a> 
+                    <img src="{% static '/icons/github-icon.svg' %}" alt="A white github icon logo">
                 </p>
             </div>
         </footer>

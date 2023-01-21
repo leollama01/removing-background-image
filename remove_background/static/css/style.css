@@ -1,3 +1,11 @@
+#my-github {
+    transition: 300ms all ease-in-out
+}
+
+#my-github:hover {
+    color: yellow !important;
+}
+
 .my-maxw-50 {
     max-width: 50%;
 }
@@ -5,3 +13,4 @@
 .my-minw-25 {
     min-width: 100px;
 }
+
