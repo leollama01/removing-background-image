@@ -4,4 +4,15 @@ from django.shortcuts import render
 
 
 def render_index(request):
-    return render(request, 'remove_background/index.html')
+    print('pass here')
+    if request.method == 'POST':
+        remove_background_image(request)
+        my_context = {}
+        return render(request, 'remove_background/index.html', my_context)
+
+    else:
+        return render(request, 'remove_background/index.html')
+
+
+def remove_background_image(request):
+    print('remove bg')
