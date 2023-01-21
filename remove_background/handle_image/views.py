@@ -24,25 +24,39 @@ def render_index(request):
     target_folder = os.getcwd() + '/media'
 
     # Reference: https://stackoverflow.com/a/185941/21053661
-    for filename in os.listdir(target_folder):
-        _file_path = os.path.join(target_folder, filename)
-
-        try:
-            if os.path.isfile(_file_path) or os.path.islink(_file_path):
-                os.unlink(_file_path)
-
-            elif os.path.isdir(_file_path):
-                shutil.rmtree(_file_path)
-
-        except Exception as e:
-            description = 'Failed to delete %s. Reason: %s' % (_file_path, e)
+    try:
+        for filename in os.listdir(target_folder):
+            _file_path = os.path.join(target_folder, filename)
 
             try:
-                insertLog = LogError(date=currentDate, description=description)
-                insertLog.save()
+                if os.path.isfile(_file_path) or os.path.islink(_file_path):
+                    os.unlink(_file_path)
+
+                elif os.path.isdir(_file_path):
+                    shutil.rmtree(_file_path)
 
             except Exception as e:
-                print(str(e))
+                description = 'Failed to delete %s. Reason: %s' % (
+                    _file_path, e)
+
+                try:
+                    insertLog = LogError(
+                        date=currentDate, description=description)
+                    insertLog.save()
+
+                except Exception as e:
+                    print(str(e))
+
+    except Exception as e:
+        description = 'Failed to delete %s. Reason: %s' % (
+            _file_path, e)
+        try:
+            insertLog = LogError(
+                date=currentDate, description=description)
+            insertLog.save()
+
+        except Exception as e:
+            print(str(e))
 
     if request.method == 'POST':
         try:
