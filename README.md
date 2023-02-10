@@ -4,6 +4,7 @@
 
 #### To run this project &rarr;  
 
+* ```Python 3.10.6```
 * create your secret_key on remove_background/.env  
 * ```pip install requirements.txt```  
 * walk_to_path/with/manage.py then ```python3 manage.py runserver```  
